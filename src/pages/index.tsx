@@ -1,9 +1,12 @@
-import { GetServerSideProps } from "next";
+import { GetStaticProps } from "next";
 import Head from "next/head";
 import { SubscribeButton } from "../Components/SubscribeButton";
 import { stripe } from "../services/stripe";
 import styles from "./home.module.scss";
 
+//client-side-rendering - CSR - DINÂMICO SEM NECESSIDADE DE SEO
+//server-side-rendering - SSR - SEO-DINÂMICO ESPECÍFICOS DIFERENTES A CADA SOLICITAÇÃO
+//static-Site-Generation - SSG - SEO-PERFORMANCE SEM DADOS DINÂMICOS, REVALIDADOS A UM CERTO TEMPO
 interface HomeProps {
   product: {
     priceId: string;
@@ -35,7 +38,7 @@ export default function Home({ product }: HomeProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getStaticProps: GetStaticProps = async () => {
   const price = await stripe.prices.retrieve("price_1IYcslEyWhmwCHewiK3MD1w7", {
     expand: ["product"],
   });
@@ -49,5 +52,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
   };
   return {
     props: { product },
+    revalidate: 60 * 60 * 24, //24 hours = 1 dia
   };
 };
