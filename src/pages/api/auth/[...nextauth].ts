@@ -1,5 +1,7 @@
+import { query as q } from "faunadb";
 import NextAuth from "next-auth";
 import Providers from "next-auth/providers";
+import { fauna } from "../../../services/fauna";
 // JWT (Storage)
 // Next Auth (Social)
 // Cognito-aws, Auth0
@@ -14,6 +16,26 @@ export default NextAuth({
     //...add more providers here
   ],
 
-  //a database is optional, but required to persist accounts in a database
-  //database: process.env.DATABASE_URL,
+  callbacks: {
+    async signIn(user, account, profile) {
+      //console.log(user);
+      const { email } = user;
+      try {
+        await fauna.query(
+          q.If(
+            q.Not(
+              q.Exists(
+                q.Match(q.Index("user_by_email"), q.Casefold(user.email))
+              )
+            ),
+            q.Create(q.Collection("users"), { data: { email } }),
+            q.Get(q.Match(q.Index("user_by_email"), q.Casefold(user.email)))
+          )
+        );
+        return true;
+      } catch {
+        return false;
+      }
+    },
+  },
 });
